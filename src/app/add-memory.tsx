@@ -1,0 +1,7 @@
+import { Stack } from 'expo-router';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+
+export default function AddMemoryScreen() {
+  return <ScrollView style={styles.screen} contentContainerStyle={styles.content} contentInsetAdjustmentBehavior="automatic"><Stack.Screen options={{ title: 'New memory' }} /><Text selectable style={styles.title}>Save this moment</Text><View style={styles.media}><Text style={styles.mediaIcon}>＋</Text><Text selectable style={styles.mediaText}>Add pictures, voice, or a message</Text><Text selectable style={styles.mediaSub}>Mock controls for now</Text></View><TextInput multiline placeholder="What happened?" placeholderTextColor="#A89184" style={styles.input} /><Pressable style={styles.save}><Text style={styles.saveText}>Save this memory</Text></Pressable></ScrollView>;
+}
+const styles=StyleSheet.create({screen:{flex:1,backgroundColor:'#FBF7F1'},content:{padding:20,paddingBottom:40,gap:16},title:{color:'#493B33',fontSize:27,fontWeight:'700'},media:{height:180,alignItems:'center',justifyContent:'center',gap:6,borderRadius:24,backgroundColor:'#E7E3D1'},mediaIcon:{fontSize:38,color:'#8C7E49'},mediaText:{color:'#554F3E',fontSize:16,fontWeight:'700'},mediaSub:{color:'#817A67',fontSize:12},input:{height:140,padding:15,borderRadius:20,backgroundColor:'#FFFFFF',color:'#493B33',textAlignVertical:'top'},save:{padding:16,borderRadius:16,backgroundColor:'#C9826A'},saveText:{color:'#FFFFFF',fontSize:15,fontWeight:'800',textAlign:'center'}});
