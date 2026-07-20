@@ -1,191 +1,48 @@
 import { router, Stack } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useMemo } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
+import { CheckIn, Memory, useRelationship } from '@/context/relationship-context';
 
-import { useRelationship } from '@/context/relationship-context';
+const DAY_IN_MS = 86400000;
 
-const DAY_IN_MS = 24 * 60 * 60 * 1000;
-
-export default function HomeScreen() {
-  const { relationshipName, setRelationshipName, startDate, setStartDate, reminderYears } = useRelationship();
-  const [isEditing, setIsEditing] = useState(false);
-
-  const daysTogether = useMemo(() => {
-    const parsedDate = new Date(`${startDate}T00:00:00`);
-    if (Number.isNaN(parsedDate.getTime())) return null;
-    return Math.max(0, Math.floor((Date.now() - parsedDate.getTime()) / DAY_IN_MS));
-  }, [startDate]);
-
-  return (
-    <>
-      <Stack.Screen options={{ headerShown: false }} />
-      <ScrollView
-        style={styles.screen}
-        contentContainerStyle={styles.content}
-        contentInsetAdjustmentBehavior="automatic"
-        showsVerticalScrollIndicator={false}>
-        <View style={styles.topBar}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Choose a relationship"
-            onPress={() => router.push('/relationships')}
-            style={({ pressed }) => [styles.relationshipPicker, pressed && styles.pressed]}>
-            <Text style={styles.menuIcon}>☰</Text>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Open profile and settings"
-            onPress={() => router.push('/profile')}
-            style={({ pressed }) => [styles.avatar, pressed && styles.pressed]}>
-            <Text style={styles.avatarText}>J</Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.identitySection}>
-          {isEditing ? (
-            <View style={styles.editorCard}>
-              <Text style={styles.editorLabel}>RELATIONSHIP NAME</Text>
-              <TextInput
-                value={relationshipName}
-                onChangeText={setRelationshipName}
-                placeholder="Joyce & Brian"
-                placeholderTextColor="#A18C80"
-                style={styles.nameInput}
-              />
-              <Text style={styles.editorLabel}>START DATE · YYYY-MM-DD</Text>
-              <TextInput
-                value={startDate}
-                onChangeText={setStartDate}
-                placeholder="2018-04-01"
-                placeholderTextColor="#A18C80"
-                autoCapitalize="none"
-                style={styles.dateInput}
-              />
-              <Pressable onPress={() => setIsEditing(false)} style={styles.saveButton}>
-                <Text style={styles.saveButtonText}>Done</Text>
-              </Pressable>
-            </View>
-          ) : (
-            <View style={styles.identityRow}>
-              <View style={styles.identityCopy}>
-                <Text selectable style={styles.relationshipName}>
-                  {relationshipName || 'Our relationship'}
-                </Text>
-                <Text selectable style={styles.daysTogether}>
-                  {daysTogether === null
-                    ? 'Add a relationship start date'
-                    : `${daysTogether.toLocaleString()} days together`}
-                </Text>
-              </View>
-            </View>
-          )}
-        </View>
-
-        <View style={styles.mainPart}>
-        <View style={styles.sectionHeading}><Text selectable style={styles.eyebrow}>MOST RECENT CHECK-IN</Text><Text selectable style={styles.sectionTitle}>A little pulse, together</Text></View>
-        <View style={styles.aiHighlight}><Text selectable style={styles.eyebrow}>TODAY’S HIGHLIGHT</Text><Text selectable style={styles.aiText}>Brian seems to have had a tough day because of his manager.</Text></View>
-        <View style={styles.latestPeople}><Pressable onPress={() => router.push('/check-in-detail?person=Joyce')} style={styles.conditionChip}><Text style={styles.conditionEmoji}>😊</Text><Text selectable style={styles.conditionName}>Joyce</Text></Pressable><Pressable onPress={() => router.push('/check-in-detail?person=Brian')} style={styles.conditionChip}><Text style={styles.conditionEmoji}>😔</Text><Text selectable style={styles.conditionName}>Brian</Text></Pressable></View>
-        </View>
-
-        <View style={styles.mainPart}><Pressable onPress={() => router.push('/future-events')} style={styles.countdownCard}><Text style={styles.countdownNumber}>42</Text><View><Text selectable style={styles.countdownTitle}>days until your Yosemite trip</Text><Text selectable style={styles.countdownNote}>Tap to see the event details</Text></View></Pressable></View>
-
-        <View style={styles.sectionHeading}>
-          <Text selectable style={styles.eyebrow}>
-            YOUR LATEST CHAPTER
-          </Text>
-          <Text selectable style={styles.sectionTitle}>
-            Our last memory
-          </Text>
-        </View>
-
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Open our last memory"
-          onPress={() => {}}
-          style={({ pressed }) => [styles.memoryCard, pressed && styles.pressed]}>
-          <View style={styles.memoryPhoto}>
-            <Text style={styles.memoryPhotoEmoji}>🍝</Text>
-            <Text style={styles.photoLabel}>JULY 16</Text>
-          </View>
-          <View style={styles.memoryCopy}>
-            <Text selectable style={styles.memoryDate}>
-              YESTERDAY · SAN FRANCISCO
-            </Text>
-            <Text selectable style={styles.memoryTitle}>
-              Dinner at the new table
-            </Text>
-            <Text selectable style={styles.memoryNote}>
-              First dinner together after making this place our own.
-            </Text>
-          </View>
-        </Pressable>
-
-        <View style={styles.sectionHeading}>
-          <Text selectable style={styles.eyebrow}>A LITTLE REMINDER</Text>
-          <Text selectable style={styles.sectionTitle}>From this day</Text>
-        </View>
-
-        <View style={styles.flashbackList}>
-          {reminderYears.map((year) => (
-            <Pressable key={year} onPress={() => router.push(`/memory-event?year=${year}`)} style={styles.flashbackCard}>
-              <Text selectable style={styles.flashbackYear}>{year} {year === 1 ? 'YEAR' : 'YEARS'} AGO</Text>
-              <Text selectable style={styles.flashbackTitle}>{year === 1 ? 'Our first dinner here' : year === 2 ? 'The weekend we got lost' : 'That tiny kitchen dance party'}</Text>
-              <Text selectable style={styles.flashbackNote}>{year === 1 ? 'The apartment was still full of boxes, but it already felt like home.' : 'A small moment worth keeping close.'}</Text>
-            </Pressable>
-          ))}
-        </View>
-      </ScrollView>
-    </>
-  );
+function getAiSummary(checkIn?: CheckIn) {
+  if (!checkIn) return 'No check-ins yet. A small update can help you stay close.';
+  if (checkIn.mood === 'Not feeling well') return `${checkIn.person} has had a difficult day and may appreciate a quiet, supportive evening.`;
+  if (checkIn.mood === 'Great') return `${checkIn.person} is feeling positive and grateful today. It is a good moment to celebrate the little things together.`;
+  if (checkIn.mood === 'Missing you') return `${checkIn.person} is holding a tender memory close today and may find comfort in sharing a story.`;
+  return `${checkIn.person} is taking today one step at a time and has shared a gentle update.`;
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#FBF7F1' },
-  content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 128, gap: 24 },
-  topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  relationshipPicker: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF' },
-  menuIcon: { color: '#876F63', fontSize: 22 },
-  avatar: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#E8D2C4', alignItems: 'center', justifyContent: 'center' },
-  avatarText: { color: '#705548', fontSize: 17, fontWeight: '700' },
-  identitySection: { minHeight: 82, justifyContent: 'center' },
-  identityRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  identityCopy: { flex: 1, gap: 5 },
-  relationshipName: { color: '#47382F', fontSize: 32, fontWeight: '700', letterSpacing: -1 },
-  daysTogether: { color: '#9A7869', fontSize: 15, fontWeight: '600', fontVariant: ['tabular-nums'] },
-  editButton: { paddingHorizontal: 13, paddingVertical: 8, borderRadius: 14, backgroundColor: '#F1E5DC' },
-  editButtonText: { color: '#8C6657', fontSize: 13, fontWeight: '800' },
-  editorCard: { padding: 16, gap: 8, borderRadius: 20, backgroundColor: '#F1E5DC' },
-  editorLabel: { color: '#9B7665', fontSize: 10, fontWeight: '800', letterSpacing: 0.9, marginTop: 2 },
-  nameInput: { color: '#49382F', fontSize: 20, fontWeight: '700', paddingVertical: 3 },
-  dateInput: { color: '#49382F', fontSize: 16, fontWeight: '600', paddingVertical: 3 },
-  saveButton: { alignSelf: 'flex-start', backgroundColor: '#C9826A', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 9, marginTop: 4 },
-  saveButtonText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800' },
-  mainPart:{padding:16,gap:13,borderRadius:24,backgroundColor:'#FFFFFF',borderWidth:1,borderColor:'#F0E8E0'}, sectionHeading: { gap: 4 },
-  eyebrow: { color: '#A17460', fontSize: 11, fontWeight: '800', letterSpacing: 1.05 },
-  sectionTitle: { color: '#493B33', fontSize: 25, fontWeight: '700', letterSpacing: -0.5 },
-  memoryCard: { overflow: 'hidden', borderRadius: 24, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#F0E8E0' },
-  memoryPhoto: { height: 184, backgroundColor: '#D7B99A', alignItems: 'center', justifyContent: 'center' },
-  memoryPhotoEmoji: { fontSize: 68 },
-  photoLabel: { position: 'absolute', right: 14, bottom: 13, color: '#FFFFFF', fontSize: 10, fontWeight: '800', letterSpacing: 1, backgroundColor: 'rgba(69,55,47,0.28)', borderRadius: 9, overflow: 'hidden', paddingHorizontal: 8, paddingVertical: 5 },
-  memoryCopy: { padding: 17, gap: 5 },
-  memoryDate: { color: '#A0715C', fontSize: 10, fontWeight: '800', letterSpacing: 0.9 },
-  memoryTitle: { color: '#47382F', fontSize: 21, fontWeight: '700', letterSpacing: -0.3 },
-  memoryNote: { color: '#806F65', fontSize: 14, lineHeight: 20 },
-  checkInList: { gap: 10 },
-  memberCheckIn: { flexDirection: 'row', alignItems: 'center', gap: 11, padding: 13, borderRadius: 19, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#F0E8E0' },
-  memberAvatar: { width: 39, height: 39, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  memberInitial: { color: '#665349', fontSize: 14, fontWeight: '800' },
-  memberCopy: { flex: 1, gap: 2 },
-  memberName: { color: '#503F35', fontSize: 15, fontWeight: '800' },
-  memberStatus: { color: '#837269', fontSize: 12 },
-  memberTime: { color: '#A18A7D', fontSize: 10, fontWeight: '700' },
-  flashbackList: { gap: 10 },
-  flashbackCard: { padding: 19, gap: 6, borderRadius: 24, backgroundColor: '#E7E3D1' },
-  flashbackYear: { color: '#887C48', fontSize: 10, fontWeight: '800', letterSpacing: 1 },
-  flashbackTitle: { color: '#4D4A39', fontSize: 21, fontWeight: '700', letterSpacing: -0.3 },
-  flashbackNote: { color: '#6B6756', fontSize: 14, lineHeight: 20 },
-  flashbackLink: { color: '#82733F', fontSize: 12, fontWeight: '800', marginTop: 2 },
-  countdownCard:{flexDirection:'row',alignItems:'center',gap:12,padding:15,borderRadius:20,backgroundColor:'#F1E5DC'},countdownNumber:{color:'#A26351',fontSize:28,fontWeight:'800',fontVariant:['tabular-nums']},countdownTitle:{color:'#554238',fontSize:15,fontWeight:'800'},countdownNote:{color:'#8D7468',fontSize:12,marginTop:3},countdownArrow:{marginLeft:'auto',color:'#A0715C',fontSize:22},
-  averageCard: { flexDirection: 'row', gap: 13, alignItems: 'center', padding: 16, borderRadius: 21, backgroundColor: '#F0DDD1' }, averageEmoji: { fontSize: 35 }, averageCopy:{flex:1,minWidth:0}, averageTitle: { color: '#503C32', fontSize: 16, fontWeight: '800' }, averageNote: { color: '#846C60', fontSize: 12, marginTop: 3 }, latestPeople: { flexDirection: 'row', gap: 9, padding:10, borderRadius:16, backgroundColor:'#F8F4EF' }, conditionChip:{flex:1,flexDirection:'row',justifyContent:'center',alignItems:'center',gap:6,paddingVertical:8,borderRadius:12,backgroundColor:'#FFFFFF'},conditionEmoji:{fontSize:20},conditionName:{color:'#715B50',fontSize:13,fontWeight:'800'}, aiHighlight: { padding: 16, gap: 6, borderRadius: 19, backgroundColor: '#E7E3D1' }, aiText: { color: '#5D594A', fontSize: 15, lineHeight: 21 },
-  pressed: { opacity: 0.8, transform: [{ scale: 0.985 }] },
-});
+function fallbackCheckIn(person: string) {
+  const defaults: Record<string, Pick<CheckIn, 'mood' | 'emoji' | 'note'>> = {
+    Joyce: { mood: 'Great', emoji: '😊', note: 'Feeling grateful for our little routines today.' },
+    Brian: { mood: 'Okay', emoji: '🙂', note: 'Looking forward to a quiet evening together.' },
+    James: { mood: 'Great', emoji: '😊', note: 'Feeling happy to see the family doing well.' },
+    Sarah: { mood: 'Great', emoji: '😊', note: 'Sending love and thinking of everyone today.' },
+    'Baby Mila': { mood: 'Growing', emoji: '🌱', note: 'Growing safely and getting stronger every day.' },
+    Grandma: { mood: 'Remembered', emoji: '🌼', note: 'Her warmth is close in our hearts today.' },
+    Grandpa: { mood: 'Remembered', emoji: '🕊️', note: 'His stories and gentle encouragement stay with us.' },
+  };
+  return { id: `seeded-${person}`, person, ...(defaults[person] ?? { mood: 'Okay', emoji: '🙂', note: 'Holding this relationship close today.' }), createdAt: '' };
+}
+
+export default function HomeScreen() {
+  const { relationshipName, startDate, reminderYears, activeRelationship } = useRelationship();
+  const memories = activeRelationship.memories;
+  const latestMemory = [...memories].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+  const checkIns = [...activeRelationship.checkIns].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const latestCheckIn = checkIns[0];
+  const memberNames = activeRelationship.members.split(/,|&/).map((name) => name.trim()).filter((name) => Boolean(name) && name !== 'Baby Mila');
+  const peopleCheckIns = memberNames.map((person) => checkIns.find((entry) => entry.person === person) ?? fallbackCheckIn(person));
+  const nextEvent = [...activeRelationship.futureEvents].sort((a, b) => a.date.localeCompare(b.date))[0];
+  const daysTogether = useMemo(() => { const parsed = new Date(`${startDate}T00:00:00`); return Number.isNaN(parsed.getTime()) ? null : Math.max(0, Math.floor((Date.now() - parsed.getTime()) / DAY_IN_MS)); }, [startDate]);
+  const eventDays = nextEvent ? Math.max(0, Math.ceil((new Date(`${nextEvent.date}T00:00:00`).getTime() - Date.now()) / DAY_IN_MS)) : null;
+  const flashbacks = reminderYears.map((yearsAgo) => ({ yearsAgo, memory: memories.filter((memory) => new Date(memory.createdAt).getFullYear() === new Date().getFullYear() - yearsAgo).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0] }));
+
+  return <><Stack.Screen options={{ headerShown: false }} /><ScrollView style={s.screen} contentContainerStyle={s.content} contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false}><View style={s.top}><Pressable accessibilityLabel="Choose a relationship" onPress={() => router.push('/relationships')} style={s.round}><Text style={s.menu}>☰</Text></Pressable><Pressable accessibilityLabel="Open profile" onPress={() => router.push('/profile')} style={s.profile}><Text style={s.profileIcon}>👤</Text></Pressable></View><View><Text selectable style={s.name}>{relationshipName || 'New relationship'}</Text><Text selectable style={s.sub}>{daysTogether === null ? 'Add a relationship start date' : `${daysTogether.toLocaleString()} days together`}</Text></View><View style={s.checkCard}><View style={s.heading}><Text selectable style={s.eyebrow}>MOST RECENT CHECK-IN</Text><Text selectable style={s.section}>A little pulse, together</Text></View><View style={s.aiHighlight}><Text selectable style={s.eyebrow}>TODAY'S HIGHLIGHT</Text><Text selectable style={s.aiText}>{getAiSummary(latestCheckIn)}</Text></View><View style={s.latestPeople}>{peopleCheckIns.length ? peopleCheckIns.map((entry) => <Pressable key={entry.id} onPress={() => router.push('/daily-check-in')} style={s.conditionChip}><Text style={s.conditionEmoji}>{entry.emoji}</Text><View><Text selectable style={s.conditionName}>{entry.person}</Text><Text selectable style={s.conditionMood}>{entry.mood}</Text></View></Pressable>) : <Pressable onPress={() => router.push('/daily-check-in')} style={s.conditionChip}><Text style={s.conditionEmoji}>+</Text><Text selectable style={s.conditionName}>Add a check-in</Text></Pressable>}</View></View>{nextEvent && <Pressable onPress={() => router.push('/future-events')} style={s.event}><Text style={s.eventDays}>{eventDays}</Text><View><Text selectable style={s.eventTitle}>days until {nextEvent.title}</Text><Text selectable style={s.eventNote}>{nextEvent.note}</Text></View></Pressable>}<View style={s.heading}><Text selectable style={s.eyebrow}>YOUR LATEST CHAPTER</Text><Text selectable style={s.section}>Our last memory</Text></View><MemoryCard memory={latestMemory} /><View style={s.heading}><Text selectable style={s.eyebrow}>A LITTLE THROWBACK</Text><Text selectable style={s.section}>From this day</Text></View><View style={s.flashbackList}>{flashbacks.map(({ yearsAgo, memory }) => <Pressable key={yearsAgo} onPress={() => router.push('/relationship-timeline')} style={s.flashbackCard}><Text selectable style={s.flashbackYear}>{yearsAgo} {yearsAgo === 1 ? 'YEAR' : 'YEARS'} AGO</Text><Text selectable style={s.flashbackTitle}>{memory?.title || 'No memory saved yet'}</Text><Text selectable style={s.flashbackNote}>{memory?.body || `Save a memory from ${new Date().getFullYear() - yearsAgo} to revisit it here.`}</Text></Pressable>)}</View></ScrollView></>;
+}
+
+function MemoryCard({ memory }: { memory?: Memory }) { return <Pressable onPress={() => router.push('/relationship-timeline')} style={s.memory}>{memory?.photoUri ? <Image source={{ uri: memory.photoUri }} contentFit="cover" style={s.photo} /> : <View style={s.cover}><Text style={s.coverEmoji}>{memory?.coverEmoji || '+'}</Text></View>}<View style={s.memoryCopy}><Text selectable style={s.memoryDate}>{memory ? new Date(memory.createdAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }) : 'A PLACE TO BEGIN'}</Text><Text selectable style={s.memoryTitle}>{memory?.title || 'Save your first memory'}</Text><Text selectable style={s.memoryNote}>{memory?.body || 'Photos and memories saved here belong to this relationship only.'}</Text></View></Pressable>; }
+
+const s = StyleSheet.create({ screen:{flex:1,backgroundColor:'#FBF7F1'},content:{paddingHorizontal:20,paddingTop:16,paddingBottom:128,gap:22},top:{flexDirection:'row',justifyContent:'space-between'},round:{width:42,height:42,borderRadius:21,backgroundColor:'#fff',alignItems:'center',justifyContent:'center'},profile:{width:42,height:42,borderRadius:21,backgroundColor:'#E8D2C4',alignItems:'center',justifyContent:'center'},profileIcon:{fontSize:20},menu:{color:'#876F63',fontSize:20},name:{color:'#47382F',fontSize:32,fontWeight:'700',letterSpacing:-1},sub:{color:'#9A7869',fontSize:14,fontWeight:'600',marginTop:5},checkCard:{padding:16,gap:13,borderRadius:24,backgroundColor:'#fff',borderWidth:1,borderColor:'#F0E8E0'},heading:{gap:4},eyebrow:{color:'#A17460',fontSize:10,fontWeight:'800',letterSpacing:1},section:{color:'#493B33',fontSize:25,fontWeight:'700'},aiHighlight:{padding:16,gap:6,borderRadius:19,backgroundColor:'#E7E3D1'},aiText:{color:'#5D594A',fontSize:15,lineHeight:21},latestPeople:{gap:9,padding:10,borderRadius:16,backgroundColor:'#F8F4EF'},conditionChip:{width:'100%',flexDirection:'row',alignItems:'center',gap:9,padding:10,borderRadius:12,backgroundColor:'#fff'},conditionEmoji:{fontSize:20},conditionName:{color:'#715B50',fontSize:13,fontWeight:'800'},conditionMood:{color:'#8D7468',fontSize:10,marginTop:1},event:{flexDirection:'row',alignItems:'center',gap:12,padding:15,borderRadius:20,backgroundColor:'#F1E5DC',overflow:'hidden'},eventDays:{color:'#A26351',fontSize:28,fontWeight:'800',flexShrink:0},eventTitle:{color:'#554238',fontSize:15,fontWeight:'800',flexShrink:1,maxWidth:245},eventNote:{color:'#8D7468',fontSize:12,marginTop:3,maxWidth:245,flexShrink:1},memory:{overflow:'hidden',borderRadius:24,backgroundColor:'#fff',borderWidth:1,borderColor:'#F0E8E0'},cover:{height:184,alignItems:'center',justifyContent:'center',backgroundColor:'#D7B99A'},coverEmoji:{fontSize:68},photo:{height:184,width:'100%'},memoryCopy:{padding:17,gap:5},memoryDate:{color:'#A0715C',fontSize:10,fontWeight:'800',letterSpacing:.9},memoryTitle:{color:'#47382F',fontSize:21,fontWeight:'700'},memoryNote:{color:'#806F65',fontSize:14,lineHeight:20},flashbackList:{gap:10},flashbackCard:{padding:19,gap:6,borderRadius:24,backgroundColor:'#E7E3D1'},flashbackYear:{color:'#887C48',fontSize:10,fontWeight:'800',letterSpacing:1},flashbackTitle:{color:'#4D4A39',fontSize:21,fontWeight:'700'},flashbackNote:{color:'#6B6756',fontSize:14,lineHeight:20} });
