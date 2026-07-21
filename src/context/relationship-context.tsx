@@ -2,11 +2,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, PropsWithChildren, useContext, useEffect, useMemo, useState } from 'react';
 
 const STORAGE_KEY = '@mymory/relationship-spaces/v10';
+const JOYCE_BRIAN_TEST_PHOTO_REMOVAL_KEY = '@mymory/joyce-brian-test-photo-removed/v1';
+const BRIAN_CHECKIN_UPDATE_KEY = '@mymory/brian-checkin-very-good/v1';
+const CHECKIN_MOOD_NORMALIZATION_KEY = '@mymory/checkin-moods-normalized/v1';
+const GRANDPARENTS_RIP_UPDATE_KEY = '@mymory/grandparents-rip-checkins/v1';
 
 export type Memory = { id: string; title: string; body: string; createdAt: string; photoUri?: string; coverEmoji?: string };
 export type CheckIn = { id: string; person: string; mood: string; emoji: string; note: string; createdAt: string };
 export type FutureEvent = { id: string; title: string; note: string; date: string };
-export type Relationship = { id: string; name: string; startDate: string; members: string; reminderYears: number[]; memories: Memory[]; checkIns: CheckIn[]; futureEvents: FutureEvent[] };
+export type Relationship = { id: string; name: string; startDate: string; members: string; memorialMembers?: string[]; reminderYears: number[]; memories: Memory[]; checkIns: CheckIn[]; futureEvents: FutureEvent[] };
 type PersistedState = { relationships: Relationship[]; activeRelationshipId: string };
 
 const memory = (id: string, title: string, body: string, createdAt: string, coverEmoji: string): Memory => ({ id, title, body, createdAt, coverEmoji });
@@ -20,19 +24,24 @@ const initialRelationships: Relationship[] = [
 ];
 
 const flashbackMemories: Record<string, Memory[]> = {
+  mila: [
+    memory('mila-2025', 'A wish for you', 'Before we knew your name, we were already imagining the little person we hoped to meet one day.', '2025-07-19T18:00:00.000Z', '✨'),
+    memory('mila-2023', 'A family promise', 'We talked about the family we wanted to build: gentle mornings, loud laughter, and room for every feeling.', '2023-07-19T18:00:00.000Z', '🌙'),
+    memory('mila-2021', 'The beginning of us', 'A quiet note we wrote to our future family, full of hope for all the days still ahead.', '2021-07-19T18:00:00.000Z', '🤍'),
+  ],
   'joyce-brian': [
     memory('jb-2025', 'Our favorite rainy Sunday', 'Coffee in bed, a slow walk, and the feeling that ordinary days are our favorite kind.', '2025-07-19T18:00:00.000Z', '☔'),
-    memory('jb-2024', 'A small anniversary dinner', 'We toasted all the versions of us that made it here, then ordered dessert twice.', '2024-07-19T18:00:00.000Z', '🥂'),
+    memory('jb-2023', 'A small anniversary dinner', 'We toasted all the versions of us that made it here, then ordered dessert twice.', '2023-07-19T18:00:00.000Z', '🥂'),
     memory('jb-2021', 'Our first home together', 'We unpacked the last box, ate takeout on the floor, and called it perfect.', '2021-07-19T18:00:00.000Z', '🔑'),
   ],
   'huang-family': [
     memory('family-2025', 'Mom’s birthday dinner', 'Everyone crowded around the table and Dad insisted on taking one more family photo.', '2025-07-19T18:00:00.000Z', '🎂'),
-    memory('family-2024', 'A summer weekend at home', 'Mom packed snacks, Dad drove, and we spent the day talking like no time had passed.', '2024-07-19T18:00:00.000Z', '🌿'),
+    memory('family-2023', 'A summer weekend at home', 'Mom packed snacks, Dad drove, and we spent the day talking like no time had passed.', '2023-07-19T18:00:00.000Z', '🌿'),
     memory('family-2021', 'The wedding welcome', 'Brian became part of the family with hugs, happy tears, and a very full dinner table.', '2021-07-19T18:00:00.000Z', '💐'),
   ],
   grandparents: [
     memory('gp-2025', 'A letter to Grandma and Grandpa', 'I wrote down the little things I wished I could tell you, then kept the letter close.', '2025-07-19T18:00:00.000Z', '✉️'),
-    memory('gp-2024', 'Lunar New Year remembrance', 'I made your favorite dish and shared your stories at the table so you were with us.', '2024-07-19T18:00:00.000Z', '🧧'),
+    memory('gp-2023', 'Lunar New Year remembrance', 'I made your favorite dish and shared your stories at the table so you were with us.', '2023-07-19T18:00:00.000Z', '🧧'),
     memory('gp-2021', 'Summer flowers for you', 'I brought fresh flowers and sat quietly, remembering every summer porch conversation.', '2021-07-19T18:00:00.000Z', '💐'),
   ],
 };
@@ -58,8 +67,8 @@ const memberCheckIns: Record<string, CheckIn[]> = {
 initialRelationships.forEach((relationship) => relationship.checkIns.push(...(memberCheckIns[relationship.id] ?? [])));
 
 const memberLabels: Record<string, string> = {
-  'mila': 'Joyce, Brian & Baby Mila',
-  'huang-family': 'James, Sarah, Joyce & Brian',
+  'mila': 'Mommy (Joyce), Daddy (Brian) & Baby Mila',
+  'huang-family': 'Dad (James), Mom (Sarah) & Joyce',
 };
 
 const renamedMembers: Record<string, string> = { Mommy: 'Joyce', Daddy: 'Brian', Mom: 'Sarah', Dad: 'James' };
@@ -75,28 +84,35 @@ function normalizeRelationship(relationship: Partial<Relationship>): Relationshi
   const seed = initialRelationships.find((item) => item.id === relationship.id);
   const restoredCheckIns = relationship.checkIns ?? [];
   const missingSeedCheckIns = (seed?.checkIns ?? []).filter((checkIn) => !restoredCheckIns.some((restored) => restored.person === checkIn.person));
+  const restoredMemories = relationship.memories ?? [];
+  const missingSeedMemories = (seed?.memories ?? []).filter((memory) => !restoredMemories.some((restored) => restored.id === memory.id));
   return {
     id: relationship.id ?? `relationship-${Date.now()}`,
     name: relationship.name ?? '',
-    members: relationship.members ?? seed?.members ?? '',
+    members: memberLabels[relationship.id] ?? relationship.members ?? seed?.members ?? '',
+    memorialMembers: relationship.memorialMembers ?? [],
     startDate: relationship.startDate ?? '',
     reminderYears: (relationship.reminderYears ?? [1, 3, 5]).filter((year) => [1, 3, 5].includes(year)),
-    memories: relationship.memories ?? [],
+    memories: [...restoredMemories, ...missingSeedMemories],
     checkIns: [...restoredCheckIns, ...missingSeedCheckIns],
     futureEvents: relationship.futureEvents ?? [],
   };
 }
 
-type RelationshipContextValue = { relationships: Relationship[]; activeRelationship: Relationship; selectRelationship: (id: string) => void; addRelationship: (draft?: Pick<Relationship, 'name' | 'members' | 'startDate'>) => void; relationshipName: string; setRelationshipName: (name: string) => void; members: string; setMembers: (members: string) => void; startDate: string; setStartDate: (date: string) => void; reminderYears: number[]; setReminderYears: (years: number[]) => void; addMemory: (memory: Omit<Memory, 'id' | 'createdAt'>) => void; addCheckIn: (checkIn: Omit<CheckIn, 'id' | 'createdAt' | 'person'>) => void; addFutureEvent: (event: Omit<FutureEvent, 'id'>) => void };
+type RelationshipContextValue = { relationships: Relationship[]; activeRelationship: Relationship; selectRelationship: (id: string) => void; addRelationship: (draft?: Pick<Relationship, 'name' | 'members' | 'memorialMembers' | 'startDate'>) => void; relationshipName: string; setRelationshipName: (name: string) => void; members: string; setMembers: (members: string) => void; startDate: string; setStartDate: (date: string) => void; reminderYears: number[]; setReminderYears: (years: number[]) => void; addMemory: (memory: Omit<Memory, 'id' | 'createdAt'>) => void; addCheckIn: (checkIn: Omit<CheckIn, 'id' | 'createdAt' | 'person'>) => void; addFutureEvent: (event: Omit<FutureEvent, 'id'>) => void };
 const RelationshipContext = createContext<RelationshipContextValue | undefined>(undefined);
 
 export function RelationshipProvider({ children }: PropsWithChildren) {
   const [relationships, setRelationships] = useState(initialRelationships); const [activeRelationshipId, setActiveRelationshipId] = useState(initialRelationships[0].id); const [hasLoaded, setHasLoaded] = useState(false);
-  useEffect(() => { AsyncStorage.getItem(STORAGE_KEY).then((stored) => { if (!stored) return; const parsed = JSON.parse(stored) as PersistedState; if (parsed.relationships?.length && parsed.activeRelationshipId) { const restored = parsed.relationships.map(normalizeRelationship); setRelationships(restored); setActiveRelationshipId(restored.some((relationship) => relationship.id === parsed.activeRelationshipId) ? parsed.activeRelationshipId : restored[0].id); } }).catch(() => undefined).finally(() => setHasLoaded(true)); }, []);
+  useEffect(() => { AsyncStorage.getItem(STORAGE_KEY).then((stored) => { if (!stored) return; const parsed = JSON.parse(stored) as PersistedState; if (parsed.relationships?.length && parsed.activeRelationshipId) { const restored = parsed.relationships.map(normalizeRelationship).filter((relationship) => relationship.name.trim().length > 0); if (restored.length) { setRelationships(restored); setActiveRelationshipId(restored.some((relationship) => relationship.id === parsed.activeRelationshipId) ? parsed.activeRelationshipId : restored[0].id); } } }).catch(() => undefined).finally(() => setHasLoaded(true)); }, []);
   useEffect(() => { if (hasLoaded) AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ relationships, activeRelationshipId })).catch(() => undefined); }, [activeRelationshipId, hasLoaded, relationships]);
+  useEffect(() => { if (!hasLoaded) return; AsyncStorage.getItem(JOYCE_BRIAN_TEST_PHOTO_REMOVAL_KEY).then((completed) => { if (completed) return; setRelationships((current) => current.map((relationship) => { if (relationship.id !== 'joyce-brian') return relationship; const testPhoto = [...relationship.memories].filter((memory) => memory.photoUri).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]; return testPhoto ? { ...relationship, memories: relationship.memories.filter((memory) => memory.id !== testPhoto.id) } : relationship; })); return AsyncStorage.setItem(JOYCE_BRIAN_TEST_PHOTO_REMOVAL_KEY, 'true'); }).catch(() => undefined); }, [hasLoaded]);
+  useEffect(() => { if (!hasLoaded) return; AsyncStorage.getItem(BRIAN_CHECKIN_UPDATE_KEY).then((completed) => { if (completed) return; setRelationships((current) => current.map((relationship) => relationship.id === 'joyce-brian' ? { ...relationship, checkIns: relationship.checkIns.map((checkIn) => checkIn.person === 'Brian' ? { ...checkIn, mood: 'Very good', emoji: '🤩', note: 'Feeling energized and grateful for our growing family.' } : checkIn) } : relationship)); return AsyncStorage.setItem(BRIAN_CHECKIN_UPDATE_KEY, 'true'); }).catch(() => undefined); }, [hasLoaded]);
+  useEffect(() => { if (!hasLoaded) return; AsyncStorage.getItem(CHECKIN_MOOD_NORMALIZATION_KEY).then((completed) => { if (completed) return; setRelationships((current) => current.map((relationship) => { if (relationship.id === 'joyce-brian') return { ...relationship, checkIns: relationship.checkIns.map((checkIn) => checkIn.person === 'Brian' ? { ...checkIn, mood: 'Great', emoji: '😊', note: 'Feeling energized and grateful for our growing family.' } : checkIn) }; if (relationship.id === 'mila') return { ...relationship, checkIns: relationship.checkIns.map((checkIn) => (checkIn.person === 'Joyce' || checkIn.person === 'Mommy') ? { ...checkIn, mood: 'Great', emoji: '😊' } : (checkIn.person === 'Brian' || checkIn.person === 'Daddy') ? { ...checkIn, mood: 'Okay', emoji: '🙂' } : checkIn) }; if (relationship.id === 'grandparents') return { ...relationship, checkIns: relationship.checkIns.map((checkIn) => checkIn.person === 'Grandma' || checkIn.person === 'Grandpa' ? { ...checkIn, mood: 'Okay', emoji: '🕊️ 🕊️' } : checkIn.person === 'Joyce' ? { ...checkIn, mood: 'Okay', emoji: '🙂' } : checkIn) }; return relationship; })); return AsyncStorage.setItem(CHECKIN_MOOD_NORMALIZATION_KEY, 'true'); }).catch(() => undefined); }, [hasLoaded]);
+  useEffect(() => { if (!hasLoaded) return; AsyncStorage.getItem(GRANDPARENTS_RIP_UPDATE_KEY).then((completed) => { if (completed) return; setRelationships((current) => current.map((relationship) => relationship.id === 'grandparents' ? { ...relationship, checkIns: relationship.checkIns.map((checkIn) => checkIn.person === 'Grandma' || checkIn.person === 'Grandpa' ? { ...checkIn, mood: 'RIP', emoji: '🕊️' } : checkIn) } : relationship)); return AsyncStorage.setItem(GRANDPARENTS_RIP_UPDATE_KEY, 'true'); }).catch(() => undefined); }, [hasLoaded]);
   const activeRelationship = relationships.find((relationship) => relationship.id === activeRelationshipId) ?? relationships[0];
   const updateActive = (update: (relationship: Relationship) => Relationship) => setRelationships((current) => current.map((relationship) => relationship.id === activeRelationship.id ? update(relationship) : relationship));
-  const value = useMemo<RelationshipContextValue>(() => ({ relationships, activeRelationship, selectRelationship: setActiveRelationshipId, addRelationship: (draft) => { const id = `relationship-${Date.now()}`; setRelationships((current) => [...current, { id, name: draft?.name ?? '', members: draft?.members ?? '', startDate: draft?.startDate ?? '', reminderYears: [1, 3, 5], memories: [], checkIns: [], futureEvents: [] }]); setActiveRelationshipId(id); }, relationshipName: activeRelationship.name, setRelationshipName: (name) => updateActive((relationship) => ({ ...relationship, name })), members: activeRelationship.members, setMembers: (members) => updateActive((relationship) => ({ ...relationship, members })), startDate: activeRelationship.startDate, setStartDate: (startDate) => updateActive((relationship) => ({ ...relationship, startDate })), reminderYears: activeRelationship.reminderYears, setReminderYears: (reminderYears) => updateActive((relationship) => ({ ...relationship, reminderYears })), addMemory: (newMemory) => updateActive((relationship) => ({ ...relationship, memories: [...relationship.memories, { ...newMemory, id: `memory-${Date.now()}`, createdAt: new Date().toISOString() }] })), addCheckIn: (newCheckIn) => updateActive((relationship) => ({ ...relationship, checkIns: [...relationship.checkIns, { ...newCheckIn, person: 'Joyce', id: `checkin-${Date.now()}`, createdAt: new Date().toISOString() }] })), addFutureEvent: (event) => updateActive((relationship) => ({ ...relationship, futureEvents: [...relationship.futureEvents, { ...event, id: `event-${Date.now()}` }] })) }), [activeRelationship, relationships]);
+  const value = useMemo<RelationshipContextValue>(() => ({ relationships, activeRelationship, selectRelationship: setActiveRelationshipId, addRelationship: (draft) => { const id = `relationship-${Date.now()}`; setRelationships((current) => [...current, { id, name: draft?.name ?? '', members: draft?.members ?? '', memorialMembers: draft?.memorialMembers ?? [], startDate: draft?.startDate ?? '', reminderYears: [1, 3, 5], memories: [], checkIns: [], futureEvents: [] }]); setActiveRelationshipId(id); }, relationshipName: activeRelationship.name, setRelationshipName: (name) => updateActive((relationship) => ({ ...relationship, name })), members: activeRelationship.members, setMembers: (members) => updateActive((relationship) => ({ ...relationship, members })), startDate: activeRelationship.startDate, setStartDate: (date) => updateActive((relationship) => ({ ...relationship, startDate: date })), reminderYears: activeRelationship.reminderYears, setReminderYears: (years) => updateActive((relationship) => ({ ...relationship, reminderYears: years })), addMemory: (newMemory) => updateActive((relationship) => ({ ...relationship, memories: [...relationship.memories, { ...newMemory, id: `memory-${Date.now()}`, createdAt: new Date().toISOString() }] })), addCheckIn: (newCheckIn) => updateActive((relationship) => ({ ...relationship, checkIns: [...relationship.checkIns, { ...newCheckIn, person: 'Joyce', id: `checkin-${Date.now()}`, createdAt: new Date().toISOString() }] })), addFutureEvent: (event) => updateActive((relationship) => ({ ...relationship, futureEvents: [...relationship.futureEvents, { ...event, id: `event-${Date.now()}` }] })) }), [activeRelationship, relationships]);
   return <RelationshipContext.Provider value={value}>{children}</RelationshipContext.Provider>;
 }
 export function useRelationship() { const value = useContext(RelationshipContext); if (!value) throw new Error('useRelationship must be used within RelationshipProvider'); return value; }
