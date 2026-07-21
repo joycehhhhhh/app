@@ -2,7 +2,9 @@
 
 > **Don't just save conversations. Preserve relationships.**
 
-**mymory** is a private, relationship-first memory app for families, couples, friends, new parents, and people remembering loved ones. Rather than leaving meaningful moments buried in a message history, it gives every relationship its own living space: a shared timeline of photos, check-ins, milestones, and plans for the future.
+We have millions of conversations with friends and family in messaging apps, and we post countless moments on social media. But what if we could preserve the moments that shape each relationship over time? A reunion after a year apart, a long-awaited afternoon together, and the photos that capture it can sit alongside the next gathering years later—forming one continuous story instead of disappearing into separate chats and camera rolls.
+
+**mymory** is a private, relationship-first memory app for families, couples, friends, new parents, and people remembering loved ones. It gives every relationship its own living timeline of photos, check-ins, milestones, letters, and future plans. When a child leaves for college, a three-second daily check-in can say “I’m good,” “okay,” or “not feeling well” without the pressure of a long conversation. When someone you love has passed away, their story can continue through letters, photos from a visit, and the memories you still want to hold close. And before a baby is even born, parents can reserve a place for ultrasound pictures, notes from Mom and Dad, and every hopeful chapter to come.
 
 The project is an Expo / React Native prototype designed for iOS, Android, and web. It deliberately centers warmth, privacy, and emotional context over the fast-moving, feed-style experience common in social and messaging apps.
 
