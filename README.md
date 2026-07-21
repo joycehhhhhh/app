@@ -105,10 +105,12 @@ assets/         App icons, splash assets, and images
 
 The prototype has functional client-side flows and local persistence. Natural next steps are secure account-based storage, invitation and sharing permissions, cloud-synced media, richer memory metadata (such as location and voice notes), calendar integration, notifications, and carefully permissioned AI-assisted story curation.
 
-## Codex feedback session
+## Codex feedback sessions
 
-The majority of mymory's core functionality was built in this Codex session:
+Use these Codex sessions to share feedback on the project’s development journey:
 
 ```text
-/feedback 019f7d8b-a7ed-7f73-b522-7042549e7e59
+/feedback 019f7161-67e9-7562-92e9-617f15ab11ce  # App start
+/feedback 019f7d8b-a7ed-7f73-b522-7042549e7e59  # App functionality build
+/feedback 019f8295-5329-7fd3-a5d3-b93cde263b31  # Hackathon submission help
 ```
